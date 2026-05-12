@@ -1,0 +1,52 @@
+[
+    { 
+        "question": "Qual tecnologia da Panasonic é famosa por purificar o ar eliminando bactérias e odores?", 
+        "answer": "nanoe™ X",
+        "options": ["Econavi", "nanoe™ X", "Inverter", "i-AutoX"]
+    },
+    { 
+        "question": "A tecnologia Inverter da Panasonic é projetada principalmente para:", 
+        "answer": "Economia de energia",
+        "options": ["Aumentar o ruído", "Economia de energia", "Mudar a cor do aparelho", "Conexão Bluetooth"]
+    },
+    { 
+        "question": "Qual o principal benefício da função Econavi em eletrodomésticos Panasonic?", 
+        "answer": "Sensores inteligentes para otimizar o consumo",
+        "options": ["Aumento da potência", "Sensores inteligentes para otimizar o consumo", "Controle por voz", "Design em aço inox"]
+    },
+    { 
+        "question": "O que o sistema i-AutoX da Panasonic faz nos aparelhos de Ar Condicionado?", 
+        "answer": "Resfriamento 35% mais rápido",
+        "options": ["Apenas ventilação", "Resfriamento 35% mais rápido", "Aquecimento solar", "Desligamento automático"]
+    },
+    { 
+        "question": "As baterias Eneloop da Panasonic são conhecidas por serem:", 
+        "answer": "Recarregáveis e sustentáveis",
+        "options": ["Descartáveis", "Recarregáveis e sustentáveis", "Feitas de chumbo", "Incompatíveis com lanternas"]
+    },
+    { 
+        "question": "Qual é o diferencial das Geladeiras Panasonic com tecnologia Vitamin Power?", 
+        "answer": "Luzes LED que preservam vitaminas",
+        "options": ["Produção de gelo rápido", "Luzes LED que preservam vitaminas", "Wi-fi integrado", "Portas transparentes"]
+    },
+    { 
+        "question": "A linha de Micro-ondas da Panasonic utiliza qual tecnologia para cozimento uniforme?", 
+        "answer": "Inverter",
+        "options": ["Grill simples", "Inverter", "Prato giratório extra", "Botão pipoca"]
+    },
+    { 
+        "question": "O que significa a tecnologia Prime Fresh em geladeiras Panasonic?", 
+        "answer": "Congelamento suave a -3°C",
+        "options": ["Degelo automático", "Congelamento suave a -3°C", "Filtro de água externo", "Prateleiras de vidro"]
+    },
+    { 
+        "question": "Qual tecnologia de áudio é comum em produtos premium da Panasonic (como Technics)?", 
+        "answer": "JENO Engine",
+        "options": ["MP3 standard", "JENO Engine", "Mono-boost", "Analogue-only"]
+    },
+    { 
+        "question": "A filosofia 'A Better Life, A Better World' é o lema global de qual empresa?", 
+        "answer": "Panasonic",
+        "options": ["Sony", "Samsung", "Panasonic", "LG"]
+    }
+]

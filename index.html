@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>StudyBot · Assistente Interativo</title>
+    <!-- Biblioteca de Ícones Profissionais -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Biblioteca de Confetes -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-app: #ffffff;
+            --bg-header: #0041a3; /* Panasonic Blue */
+            --bg-message-bot: #f8fafc;
+            --bg-message-user: #0041a3;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --accent: #0041a3;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Container Principal Imersivo */
+        .study-app {
+            width: 100%;
+            max-width: 1400px;
+            height: 100vh;
+            background-color: var(--bg-app);
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+        }
+
+        /* Sidebar Estatísticas */
+        .stats-sidebar {
+            width: 300px;
+            background: #f8fafc;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            gap: 2rem;
+            overflow-y: auto;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-sidebar {
+                width: 260px;
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-sidebar {
+                display: none; /* Escondido por padrão no mobile */
+            }
+            
+            .study-app {
+                max-width: 100%;
+                height: 100dvh; /* dynamic viewport height */
+            }
+        }
+
+        .stats-sidebar h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card .value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* Stats compactas para mobile */
+        .mobile-stats-header {
+            display: none;
+            padding: 0.8rem 1.5rem;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-stats-header {
+                display: flex;
+            }
+        }
+
+        .mobile-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .mobile-stat-item .m-value {
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+        .mobile-stat-item .m-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* Main Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Header Minimalista */
+        .chat-header {
+            background: var(--bg-header);
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            z-index: 10;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 65, 163, 0.1);
+        }
+
+        .bot-avatar {
+            background-color: rgba(255, 255, 255, 0.2);
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .header-text h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .header-text p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Área de Chat */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            scroll-behavior: smooth;
+            background: #ffffff;
+        }
+
+        @media (max-width: 768px) {
+            .chat-messages {
+                padding: 1.2rem;
+            }
+            .chat-header {
+                padding: 1rem 1.2rem;
+            }
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-message-bot);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-secondary);
+        }
+
+        .message.user .message-avatar {
+            background: var(--accent);
+            color: white;
+        }
+
+        .message-bubble {
+            background: var(--bg-message-bot);
+            padding: 1rem 1.2rem;
+            border-radius: 1rem;
+            border-top-left-radius: 0.25rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .message.user .message-bubble {
+            background: var(--bg-message-user);
+            color: white;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 0.25rem;
+            border: none;
+        }
+
+        /* Formatação na bolha */
+        .message-bubble strong { font-weight: 700; color: inherit; }
+        .message-bubble code {
+            background: rgba(0,0,0,0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85em;
+        }
+
+        /* Indicador de Digitação */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 0.5rem;
+            align-items: center;
+        }
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Chips de Ação Rápidas */
+        .bottom-actions {
+            padding: 0 1.5rem 0.5rem 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .bottom-actions::-webkit-scrollbar { display: none; }
+
+        .chip-btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .chip-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: #f0f7ff;
+        }
+
+        /* Input Area Moderno */
+        .input-area {
+            padding: 1rem 1.5rem 1.5rem 1.5rem;
+            background: var(--bg-app);
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 0.8rem 0.8rem 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(0, 65, 163, 0.1);
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .input-wrapper input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .send-btn {
+            background: var(--accent);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .send-btn:hover { transform: scale(1.05); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+        
+        /* Opções de Resposta */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        .option-btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 0.8rem 1rem;
+            border-radius: 0.75rem;
+            text-align: left;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .option-btn:hover {
+            border-color: var(--accent);
+            background: #f0f7ff;
+            transform: translateX(5px);
+        }
+
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        .option-btn i {
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        /* Animações de Feedback */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        @keyframes success-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); background-color: #dcfce7; }
+            100% { transform: scale(1); }
+        }
+
+        .correct-answer {
+            animation: success-pop 0.5s ease;
+            border-color: var(--success) !important;
+        }
+
+        .wrong-answer {
+            animation: shake 0.4s ease;
+            border-color: #ef4444 !important;
+        }
+
+        .wrong-option {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+            color: #b91c1c !important;
+        }
+
+        .correct-option-hint {
+            background-color: #dcfce7 !important;
+            border-color: #10b981 !important;
+            color: #065f46 !important;
+            font-weight: 700 !important;
+        }
+
+        /* Efeito de flash vermelho para erro */
+        .error-flash {
+            animation: red-flash 0.5s ease;
+        }
+
+        @keyframes red-flash {
+            0% { background-color: rgba(239, 68, 68, 0); }
+            50% { background-color: rgba(239, 68, 68, 0.15); }
+            100% { background-color: rgba(239, 68, 68, 0); }
+        }
+
+        .screen-shake {
+            animation: screen-shake-anim 0.4s ease;
+        }
+
+        @keyframes screen-shake-anim {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-1deg); }
+            50% { transform: translateX(5px) rotate(1deg); }
+            75% { transform: translateX(-5px) rotate(-1deg); }
+        }
+
+        /* Utilitário para ocultar elementos */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="study-app">
+    <!-- Sidebar de Estatísticas -->
+    <div class="stats-sidebar">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+           <div style="display: flex; align-items: center; justify-content: center; width: 100%;"><img src="logo.gif" alt="Panasonic" style="height: 70px;"></div>
+        </div>
+        
+        <h3>Desempenho</h3>
+        <div class="stat-card">
+            <div class="label">Pontuação</div>
+            <div class="value" id="statScore">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Acertos</div>
+            <div class="value" id="statHits">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Precisão</div>
+            <div class="value" id="statAccuracy">0%</div>
+        </div>
+
+        <div style="margin-top: auto;">
+            <button class="chip-btn" style="width: 100%; justify-content: center; background: var(--accent); color: white; border: none;" data-action="/desafio">
+                <i data-lucide="trophy" size="16"></i> Iniciar Desafio
+            </button>
+        </div>
+    </div>
+
+    <!-- Área Principal do Chat -->
+    <div class="chat-container">
+        <!-- Stats Mobile -->
+        <div class="mobile-stats-header">
+            <div class="mobile-stat-item">
+                <span class="m-label">Score</span>
+                <span class="m-value" id="mStatScore">0</span>
+            </div>
+            <div class="mobile-stat-item">
+                <span class="m-label">Acertos</span>
+                <span class="m-value" id="mStatHits">0</span>
+            </div>
+            <div class="mobile-stat-item">
+                <span class="m-label">Precisão</span>
+                <span class="m-value" id="mStatAccuracy">0%</span>
+            </div>
+        </div>
+
+        <div class="chat-header">
+            <div class="bot-avatar"><i data-lucide="graduation-cap" stroke-width="2.5" size="20"></i></div>
+            <div class="header-text">
+                <h2 style="font-weight: 800; letter-spacing: -0.02em;">Expert 3</h2>
+                <p><i data-lucide="check-circle" size="12"></i> Certificação</p>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Mensagens via JS -->
+        </div>
+
+        <!-- Indicador de digitação -->
+        <div id="typingIndicator" class="message bot hidden" style="padding: 0 1.5rem; margin-bottom: 1rem;">
+            <div class="message-avatar" style="background: #f1f5f9; border: 1px solid var(--border-color);"><i data-lucide="bot" size="18"></i></div>
+            <div class="message-bubble typing-indicator">
+                <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <!-- Chips Contextuais -->
+        <div class="bottom-actions">
+            <button class="chip-btn" data-action="/pergunta"><i data-lucide="play" size="14"></i> Estudar Agora</button>
+            <button class="chip-btn" data-action="/dica"><i data-lucide="lightbulb" size="14"></i> Dica</button>
+            <button class="chip-btn" data-action="/ajuda"><i data-lucide="help-circle" size="14"></i> Ajuda</button>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="Digite sua resposta ou comando..." autocomplete="off">
+                <button class="send-btn" id="sendBtn"><i data-lucide="send" size="16"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Inicializa os ícones do Lucide
+    lucide.createIcons();
+const questionBank = [
+    { 
+        question: "Consumidor gostaria de uma lava louça de grande capacidade, mas ainda está na dúvida se quer embutir o produto ou não. Ele ouviu falar que a Panasonic tem um modelo Free Standing, que possibilita a instalação no móvel ou fora dele. Qual modelo devo indicar para esse consumidor?", 
+        answer: "6M1MB",
+        options: ["6M2FT", "6M1MB", "Não temos mais modelos Free Standing"]
+    },
+    { 
+        question: "Com a função de dupla refeição presente no micro-ondas Panasonic NN-ST67LS. Quais são os valores das porções indicada pelo manual?", 
+        answer: "A função pode ser ativada para aquecer 300g, 500g e 700g (peso total das duas porções)",
+        options: [
+            "A função pode ser ativada para aquecer 300g, 500g e 700g (peso total das duas porções)",
+            "A função pode ser ativada para aquecer 500g, 700g e 900g (peso total das duas porções)",
+            "A função pode ser ativada para aquecer 100g, 200g e 500g (peso total das duas porções)"
+        ]
+    },
+    { 
+        question: "Consumidor procura um refrigerador com a tecnologia Vitamin Power, qual o único refrigerador em linha que ainda tem essa tecnologia?", 
+        answer: "BB71",
+        options: ["BB65", "BB71", "BT71"]
+    },
+    { 
+        question: "Qual o peso do Cooktop inteligente KY-T937XLRPK sem a embalagem?", 
+        answer: "21,5kg",
+        options: ["20,5kg", "21,5kg", "22,5kg"]
+    },
+    { 
+        question: "Qual o consumo de energia do Cooktop inteligente KY-T937XLRPK?", 
+        answer: "9900W",
+        options: ["8000W", "9900W", "6000W"]
+    },
+    { 
+        question: "O consumidor perguntou sobre a geladeira Panasonic BB71 e ficou curioso com a função Fresh Freeze o que ela faz e como pode ajudar no dia a dia?", 
+        answer: "A função Fresh Freeze preservando melhor os nutrientes, textura e sabor. É ideal para carnes, peixes e até bebidas que precisam de resfriamento rápido sem congelar.",
+        options: [
+            "A função Fresh Freeze apenas reduz um pouco a temperatura do freezer, sem grande impacto no uso do dia a dia",
+            "A função Fresh Freeze preservando melhor os nutrientes, textura e sabor. É ideal para carnes, peixes e até bebidas que precisam de resfriamento rápido sem congelar.",
+            "A função Fresh Freeze desliga o refrigerador para intensificar apenas o freezer, deixando os alimentos do refrigerador sem refrigeração adequada."
+        ]
+    },
+    { 
+        question: "O consumidor quer saber quantos níveis de água automático o SmartSense possui nas lavadoras Panasonic?", 
+        answer: "7 níveis de água.",
+        options: ["5 níveis de água.", "7 níveis de água.", "9 níveis de água."]
+    },
+    { 
+        question: "Qual litragem total do freezer na geladeira Panasonic NR-BB64 tem?", 
+        answer: "166 Litros",
+        options: ["166 Litros", "107 Litros", "95 Litros"]
+    },
+    { 
+        question: "Qual o tamanho do nicho para instalar o Forno Elétrico HL-CX672BRPK?", 
+        answer: "560mm Largura x 580mm profundidade x 620mm altura.",
+        options: [
+            "560mm Largura x 550mm profundidade x 590mm altura.",
+            "560mm Largura x 580mm profundidade x 620mm altura.",
+            "590mm Largura x 660mm profundidade x 590mm altura."
+        ]
+    },
+    { 
+        question: "A lavadora NA-F180P7 possui o botão Tempo de Espera, que permite configurar um tempo para que a lavadora termine o ciclo de lavagem. No ciclo dia a dia, qual o tempo que eu posso configurar?", 
+        answer: "Entre 2 até 24hrs",
+        options: ["Entre 3 até 24hrs", "Entre 2 até 24hrs", "Entre 4 até 20hrs"]
+    },
+    { 
+        question: "Qual a temperatura que o Forno Elétrico HL-CX672BRPK utiliza para fermentação de massas?", 
+        answer: "30 - 45 Graus",
+        options: ["30 - 65 Graus", "20 - 45 Graus", "30 - 45 Graus"]
+    },
+    { 
+        question: "Qual a potência que eu devo usar para ferver água no Cooktop de Indução Panasonic W648CLRPK?", 
+        answer: "Potência 9",
+        options: ["Potência 5-6", "Potência 7-8", "Potência 9"]
+    },
+    { 
+        question: "Consumidor ficou curioso sobre como funciona a função Kitchen Timer, presente na geladeira Panasonic NR-BB64PV1X/B. Qual argumento de venda devemos utilizar para gerar encantamento com essa função?", 
+        answer: "A função Kitchen Timer não altera o funcionamento da geladeira. é um temporizador personalizável de 1 a 99 minutos, que facilita os preparos na cozinha de forma prática e versátil.",
+        options: [
+            "A função Kitchen Timer acelera o congelamento do freezer, preservando os alimentos congelados mais rapidamente.",
+            "A função Kitchen Timer não altera o funcionamento da geladeira. é um temporizador personalizável de 1 a 99 minutos, que facilita os preparos na cozinha de forma prática e versátil.",
+            "A função Kitchen Timer acelera o resfriamento do refrigerador, preservando frutas, verduras e legumes com mais eficiência."
+        ]
+    },
+    { 
+        question: "O consumidor entrou na loja a procura de um micro-ondas, mas também quer forno elétrico e Air Fryer em um único produto compacto. Qual a melhor opção?", 
+        answer: "Forno Micro-ondas CD89, 30 litros, com 4 funções em 1 só produto: micro-ondas, convecção, Air Fryer e grill. Economiza espaço e traz mais praticidade.",
+        options: [
+            "Micro-ondas GT68, 30 litros, com cozimento inteligente pela função SmartSense.",
+            "Micro-ondas GB68, 30 litros, com funções Grill e Micro-ondas, além de design elegante.",
+            "Forno Micro-ondas CD89, 30 litros, com 4 funções em 1 só produto: micro-ondas, convecção, Air Fryer e grill. Economiza espaço e traz mais praticidade."
+        ]
+    },
+    { 
+        question: "O Forno Elétrico HL-CX668SRPK possui a função alarme, ela serve para lembrar você de começar um cozimento. Com quantas horas de antecedência você pode ajustar esse alarme?", 
+        answer: "9 horas",
+        options: ["5 horas", "7 horas", "9 horas"]
+    },
+    { 
+        question: "Como devemos orientar o consumidor sobre a tecnologia SmartSense presente nas geladeiras Panasonic, inclusive no modelo NR-BT71?", 
+        answer: "Inteligência artificial que dispensa uso da internet, trabalha através de sensores e micro processador que identifica a rotina do consumidor, proporcionando maior economia e melhor preservação dos alimentos.",
+        options: [
+            "Inteligência artificial que faz conexão via wi-fi para obter informações da internet e adaptar ao uso do consumidor por aplicativo, consumindo memória do celular podendo causar lentidão.",
+            "Inteligência artificial que dispensa uso da internet, trabalha através de sensores e micro processador que identifica a rotina do consumidor, proporcionando maior economia e melhor preservação dos alimentos."
+        ]
+    },
+    { 
+        question: "Quantos centímetros tem o Cooktop inteligente KY-T937XLRPK de profundidade?", 
+        answer: "52cm",
+        options: ["50cm", "51cm", "52cm"]
+    },
+    { 
+        question: "O consumidor está com dúvida de como funciona o Reuso de Água, qual a melhor explicação que podemos dar a ele?", 
+        answer: "O Reuso de Água permite que o consumidor reutilize a água do primeiro ou do segundo enxague para fins de limpeza, ou seja, o consumidor vai coletar essa água da lavadora em alguns baldes para lavar a calçada de sua casa, ou a sacada do seu apartamento por exemplo.",
+        options: [
+            "O Reuso de Água permite que a água entre em menor quantidade no cesto proporcionando mais economia.",
+            "O Reuso de Água permite reutilizar a água na própria lavadora para não desperdiçar tanta água.",
+            "O Reuso de Água permite que o consumidor reutilize a água do primeiro ou do segundo enxague para fins de limpeza, ou seja, o consumidor vai coletar essa água da lavadora em alguns baldes para lavar a calçada de sua casa, ou a sacada do seu apartamento por exemplo."
+        ]
+    },
+    { 
+        question: "Qual gás refrigerante é usado na geladeira Panasonic NR-BB65?", 
+        answer: "R600a",
+        options: ["R134a", "R600a"]
+    },
+    { 
+        question: "O Micro-ondas Embutir NN-GB68QSRUK possui a função Descongelamento de Sorvete?", 
+        answer: "Não",
+        options: ["Sim", "Não"]
+    },
+    { 
+        question: "Estou procurando uma lavadora de 15kg na cor Titanium, mas meu espaço só comporta até 60cm de largura. A Panasonic tem um modelo que atenda essa necessidade?", 
+        answer: "Sim, a Lavadora Panasonic F150 tem 15kg de capacidade, design compacto de 60cm de largura e está disponível na cor Titanium, unindo praticidade, economia e estilo moderno.",
+        options: [
+            "Não, as lavadoras de 15kg da Panasonic têm mais de 65cm de largura, não servindo para espaços reduzidos.",
+            "A Panasonic só oferece lavadoras de 15kg na cor branca, sem opção em Titanium.",
+            "Sim, a Lavadora Panasonic F150 tem 15kg de capacidade, design compacto de 60cm de largura e está disponível na cor Titanium, unindo praticidade, economia e estilo moderno."
+        ]
+    },
+    { 
+        question: "O consumidor perguntou se precisa usar água e vinagre no micro-ondas Panasonic NN-ST66NB para eliminar odores. Qual a orientação correta?", 
+        answer: "Não. A função Desodorizador usa apenas o ventilador de exaustão, sem emissão de ondas, trocando o ar interno em conjunto com a tecnologia Antibacteria AG, eliminando os odores.",
+        options: [
+            "Sim. A função Tira odor usa 10% da potência total e deve ser feita com água e vinagre.",
+            "Não. A função Desodorizador usa apenas o ventilador de exaustão, sem emissão de ondas, trocando o ar interno em conjunto com a tecnologia Antibacteria AG, eliminando os odores."
+        ]
+    },
+    { 
+        question: "Dos itens abaixo, qual NÃO é recomendado para colocar na Lava Louças?", 
+        answer: "Itens com trabalhos artesanais.",
+        options: ["Panelas", "Talheres resistentes ao calor", "Itens com trabalhos artesanais."]
+    },
+    { 
+        question: "A função de auto descongelamento de carnes do micro-ondas Panasonic NN-ST25LW suporta peso total de?", 
+        answer: "2000 gramas",
+        options: ["2000 gramas", "1500 gramas", "500 gramas"]
+    },
+    { 
+        question: "O consumidor busca uma geladeira entre 380 e 400 litros e relatou que sua atual apresenta maus odores recorrentes. Nesse caso, posso oferecer a Panasonic NR-BT41W/X, qual tecnologia contra odores o consultor deve destacar?", 
+        answer: "Sim. O modelo BT41W/X, tem 391 litros e possui a tecnologia Antibacteria Ag, que elimina 99,99% das bactérias, neutralizando os maus odores. É uma tecnologia livre de manutenção.",
+        options: [
+            "Sim. O modelo BT41W/X, tem 435 litros e possui a tecnologia Antibacteria Ag, que elimina 99,99% das bactérias, neutralizando os maus odores. É uma tecnologia livre de manutenção.",
+            "Sim. O modelo BT41W/X, tem 391 litros e possui a tecnologia Antibacteria Ag, que elimina 99,99% das bactérias, neutralizando os maus odores. É uma tecnologia livre de manutenção."
+        ]
+    },
+    { 
+        question: "O consumidor busca um micro-ondas pequeno, eficiente e rápido. Ele perguntou qual é a potência do modelo Panasonic NN-ST25LW. Qual a melhor resposta?", 
+        answer: "Este modelo possui 1250W no total: 700W dedicados ao preparo dos alimentos e 550W para o funcionamento do micro-ondas (giro do prato, iluminação, sons).",
+        options: [
+            "Este modelo possui 1000W de potência nominal, mas não divulgamos a potência dedicada para preparo. O funcionamento pode variar, demorando mais no aquecimento.",
+            "Este modelo possui apenas 800W. Esquenta bem, mas deve ser usado principalmente com a tecla de 30 segundos.",
+            "Este modelo possui 1250W no total: 700W dedicados ao preparo dos alimentos e 550W para o funcionamento do micro-ondas (giro do prato, iluminação, sons)."
+        ]
+    },
+    { 
+        question: "Qual o diâmetro do prato giratório do micro-ondas Panasonic NN-ST25LW?", 
+        answer: "27cm",
+        options: ["27cm", "24 cm", "30cm"]
+    },
+    { 
+        question: "Consumidor ficou encantado com a geladeira UniqGlass Panasonic, em especial sobre a facilidade da máquina de gelo automática com tanque interno, dispensando ponto de água, e perguntou em quanto tempo produz uma forma de gelo, quantos gelos cubos suporta o dispenser?", 
+        answer: "A produção leva 120 minutos com capacidade de 276 cubos",
+        options: [
+            "A produção leva 30 minutos com capacidade de 300 cubos",
+            "A produção leva 60 minutos com capacidade de 600 cubos",
+            "A produção leva 120 minutos com capacidade de 276 cubos"
+        ]
+    },
+    { 
+        question: "Consumidor está à procura de sua primeira geladeira frenchdoor, com água na porta e fabricação de gelo automática, porém não tem o ponto de água em sua cozinha, a geladeira UniqGlass Panasonic resolveria essa questão do consumidor?", 
+        answer: "Sim. A UniqGlass tem dois tanques internos (3L e 5L), com filtro de odores, tratamento antibacteriano e livre de BPA. Isso permite ter água fresca e gelo automático mesmo sem ponto de água, garantindo praticidade e saúde no dia a dia.",
+        options: [
+            "Não, A geladeira UniqGlass Panasonic necessita de ponto hidráulico para funcionamento do dispenser de água e máquina de gelo automática.",
+            "Sim. A UniqGlass tem dois tanques internos (3L e 5L), com filtro de odores, tratamento antibacteriano e livre de BPA. Isso permite ter água fresca e gelo automático mesmo sem ponto de água, garantindo praticidade e saúde no dia a dia.",
+            "Não. A geladeira UniqGlass possui um tanque interno de 3 litros, filtro de odores, tratamento antibacteriano e livre de BPA para o funcionamento do dispenser de água e máquina de gelo manual."
+        ]
+    },
+    { 
+        question: "Consumidor está à procura de uma geladeira de grande capacidade 494 litros porém econômica, podemos oferecer a geladeira Panasonic de modelo NR-BT71?", 
+        answer: "Sim. A geladeira Panasonic modelo NR-BT71 possui a litragem desejada com consumo de 25,8 kWh/mês",
+        options: [
+            "Sim. A geladeira Panasonic modelo NR-BT71 possui a litragem desejada com consumo de 35,8 kWh/mês",
+            "Sim. A geladeira Panasonic modelo NR-BT71 possui a litragem desejada com consumo de 25,8 kWh/mês",
+            "Não. A geladeira Panasonic é grande apenas por fora e tem consumo alto."
+        ]
+    },
+    { 
+        question: "A lavadora NA-F190G1 possui o filtro de Antibactéria AG?", 
+        answer: "Sim, vendido separadamente",
+        options: ["Sim, vendido separadamente", "Não, somente o modelo F160B1 possui."]
+    },
+    { 
+        question: "Consumidor quer um refrigerador com a Inteligência Artificial SmartSense. Qual modelo abaixo eu posso indicar?", 
+        answer: "BT71",
+        options: ["BT56", "BT71", "BT41"]
+    },
+    { 
+        question: "Qual material é feito o acabamento da Coifa FV-9HSDB2?", 
+        answer: "Vidro Temperado Preto e Inox",
+        options: ["Aço Inox", "Fibra de Carbono", "Vidro Temperado Preto e Inox"]
+    }
+];
+    currentQuestionObj = null;
+    let waitingForAnswer = false;
+    let isChallengeMode = false;
+    let challengeCount = 0;
+    const CHALLENGE_LIMIT = questionBank.length;
+
+    // Estatísticas (Iniciadas com o que estiver salvo ou padrão)
+    let stats = JSON.parse(localStorage.getItem('panasonic_academy_stats')) || {
+        score: 0,
+        hits: 0,
+        total: 0
+    };
+
+    function initApp() {
+        updateStatsUI();
+        const totalQ = questionBank.length;
+        botReply(`Olá! Bem-vindo ao **Expert 3** 📘.\n\nSou seu assistente de certificação. Temos um banco de **${totalQ} questões** preparadas para você. Vamos testar seus conhecimentos hoje? Escolha uma opção abaixo.`);
+    }
+
+    function saveStats() {
+        localStorage.setItem('panasonic_academy_stats', JSON.stringify(stats));
+    }
+
+    const messagesContainer = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    // UI Stats Elements
+    const statScore = document.getElementById('statScore');
+    const statHits = document.getElementById('statHits');
+    const statAccuracy = document.getElementById('statAccuracy');
+
+    // Mobile Stats Elements
+    const mStatScore = document.getElementById('mStatScore');
+    const mStatHits = document.getElementById('mStatHits');
+    const mStatAccuracy = document.getElementById('mStatAccuracy');
+
+    function updateStatsUI() {
+        const accuracy = stats.total === 0 ? 0 : Math.round((stats.hits / stats.total) * 100);
+        
+        // Update Desktop
+        if (statScore) statScore.innerText = stats.score;
+        if (statHits) statHits.innerText = stats.hits;
+        if (statAccuracy) statAccuracy.innerText = `${accuracy}%`;
+
+        // Update Mobile
+        if (mStatScore) mStatScore.innerText = stats.score;
+        if (mStatHits) mStatHits.innerText = stats.hits;
+        if (mStatAccuracy) mStatAccuracy.innerText = `${accuracy}%`;
+    }
+
+    // Função de formatação simples (Negrito e Código)
+    function formatText(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/`(.*?)`/g, '<code>$1</code>');
+    }
+
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function addMessageUI(text, sender, options = null) {
+        const div = document.createElement('div');
+        div.className = `message ${sender}`;
+        
+        const avatarIcon = sender === 'user' ? 'user' : 'graduation-cap';
+        const avatarStyle = sender === 'user' ? '' : 'style="background: #f1f5f9; border: 1px solid var(--border-color); color: var(--accent);"';
+        
+        let optionsHTML = '';
+        if (options && options.length > 0) {
+            optionsHTML = `<div class="options-container">
+                ${options.map(opt => `
+                    <button class="option-btn" onclick="handleOptionClick(event, '${opt.replace(/'/g, "\\'")}')">
+                        <i data-lucide="circle" size="14"></i> ${opt}
+                    </button>
+                `).join('')}
+            </div>`;
+        }
+
+        div.innerHTML = `
+            <div class="message-avatar" ${avatarStyle}><i data-lucide="${avatarIcon}" size="18"></i></div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div class="message-bubble">${formatText(text)}</div>
+                ${optionsHTML}
+            </div>
+        `;
+        
+        messagesContainer.appendChild(div);
+        lucide.createIcons();
+        scrollToBottom();
+    }
+
+    // Função global para lidar com cliques em opções
+    window.handleOptionClick = function(event, option) {
+        // Desabilitar botões após clique
+        const container = event.target.closest('.options-container');
+        if (!container) return;
+        const buttons = container.querySelectorAll('.option-btn');
+        buttons.forEach(btn => btn.disabled = true);
+        
+        processUserMessage(option);
+    };
+
+    function botReply(text, options = null) {
+        typingIndicator.classList.remove('hidden');
+        scrollToBottom();
+        
+        setTimeout(() => {
+            typingIndicator.classList.add('hidden');
+            addMessageUI(text, 'bot', options);
+        }, 500);
+    }
+
+    function nextQuestion() {
+        const q = questionBank[Math.floor(Math.random() * questionBank.length)];
+        currentQuestionObj = q;
+        waitingForAnswer = true;
+        
+        let prefix = isChallengeMode ? `**Desafio [${challengeCount + 1}/${CHALLENGE_LIMIT}]:**\n` : "**Pergunta:**\n";
+        // Bolding the question part
+        botReply(`${prefix}**${q.question}**\n\nSelecione uma das opções abaixo:`, q.options);
+    }
+
+    function processUserMessage(msg) {
+        const text = msg.trim();
+        if (!text) return;
+
+        addMessageUI(text, 'user');
+        const lowerMsg = text.toLowerCase();
+
+        // Lógica de Comandos
+        if (['/ajuda', 'ajuda'].includes(lowerMsg)) {
+            botReply("**Guia de Comandos:**\n\n`/pergunta` → Inicia um estudo livre\n`/desafio` → Modo desafio (10 questões)\n`/dica` → Ajuda com a resposta\n`/ajuda` → Mostra este guia");
+            return;
+        }
+
+        if (['/pergunta', 'nova pergunta', 'estudar agora', 'estudar', 'sim', 'ver outra pergunta'].includes(lowerMsg)) {
+            isChallengeMode = false;
+            nextQuestion();
+            return;
+        }
+
+        if (['não', 'nao', 'não, por enquanto só'].includes(lowerMsg)) {
+            botReply("Tudo bem! Se precisar de outra pergunta ou ajuda, é só me chamar. 😊");
+            return;
+        }
+
+        if (['/desafio', 'desafio'].includes(lowerMsg)) {
+            isChallengeMode = true;
+            challengeCount = 0;
+            stats.score = 0;
+            botReply("🏆 **Modo Desafio Iniciado!**\n\nSerão 10 perguntas seguidas. Vamos testar seu nível de certificação Panasonic.");
+            setTimeout(nextQuestion, 1000);
+            return;
+        }
+
+        if (['/dica', 'dica'].includes(lowerMsg)) {
+            if (!waitingForAnswer) return botReply("Você precisa iniciar uma pergunta primeiro.");
+            botReply(`💡 **Dica:** A resposta começa com: "${currentQuestionObj.answer.substring(0, 10)}..."`);
+            return;
+        }
+
+        // Validação de resposta ativa
+        if (waitingForAnswer && currentQuestionObj) {
+            stats.total++;
+            const isCorrect = text.toLowerCase().trim() === currentQuestionObj.answer.toLowerCase().trim();
+            
+            // Encontrar a última bolha do bot para animar
+            const lastBotBubble = messagesContainer.querySelectorAll('.message.bot .message-bubble');
+            const targetBubble = lastBotBubble[lastBotBubble.length - 1];
+
+            if (isCorrect) {
+                stats.hits++;
+                stats.score += 10;
+                if (targetBubble) {
+                    targetBubble.classList.remove('correct-answer');
+                    void targetBubble.offsetWidth; // trigger reflow
+                    targetBubble.classList.add('correct-answer');
+                }
+                
+                // Efeito de Confete
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#0041a3', '#ffffff', '#10b981']
+                });
+
+                botReply("✅ **Excelente!** Resposta correta.");
+                
+                if (isChallengeMode) {
+                    challengeCount++;
+                    if (challengeCount < CHALLENGE_LIMIT) {
+                        setTimeout(nextQuestion, 1200);
+                    } else {
+                        // Confete extra no fim do desafio
+                        confetti({
+                            particleCount: 300,
+                            spread: 160,
+                            origin: { y: 0.5 }
+                        });
+                        botReply(`🎊 **Desafio Concluído!**\n\nVocê completou o módulo com ${stats.hits} acertos de ${CHALLENGE_LIMIT}. Continue praticando para a certificação total.`);
+                        isChallengeMode = false;
+                        waitingForAnswer = false;
+                    }
+                } else {
+                    waitingForAnswer = false;
+                    botReply("Deseja outra pergunta?", ["Sim", "Não"]);
+                }
+            } else {
+                if (targetBubble) targetBubble.classList.add('wrong-answer');
+                
+                if (targetBubble) {
+                    targetBubble.classList.remove('wrong-answer');
+                    void targetBubble.offsetWidth; // trigger reflow
+                    targetBubble.classList.add('wrong-answer');
+                }
+                
+                // Efeito de erro visual
+                document.body.classList.remove('error-flash');
+                const appContainer = document.querySelector('.study-app');
+                if (appContainer) appContainer.classList.remove('screen-shake');
+                
+                void document.body.offsetWidth; // trigger reflow
+                
+                document.body.classList.add('error-flash');
+                if (appContainer) appContainer.classList.add('screen-shake');
+
+                // Remover classes após animação para permitir repetição
+                setTimeout(() => {
+                    document.body.classList.remove('error-flash');
+                    if (appContainer) appContainer.classList.remove('screen-shake');
+                }, 600);
+
+                waitingForAnswer = false;
+                
+                // Destacar opções correta/errada nos botões
+                const lastOptionsContainer = messagesContainer.querySelector('.message.bot:last-of-type .options-container');
+                if (lastOptionsContainer) {
+                    const buttons = lastOptionsContainer.querySelectorAll('.option-btn');
+                    buttons.forEach(btn => {
+                        const btnText = btn.innerText.trim().toLowerCase();
+                        const correctText = currentQuestionObj.answer.trim().toLowerCase();
+                        const clickedText = text.toLowerCase().trim();
+                        
+                        if (btnText.includes(correctText) || correctText.includes(btnText)) {
+                            btn.classList.add('correct-option-hint');
+                            const icon = btn.querySelector('i');
+                            if (icon) icon.setAttribute('data-lucide', 'check-circle');
+                        } else if (btnText.includes(clickedText) || clickedText.includes(btnText)) {
+                            btn.classList.add('wrong-option');
+                            const icon = btn.querySelector('i');
+                            if (icon) icon.setAttribute('data-lucide', 'x-circle');
+                        }
+                    });
+                    lucide.createIcons();
+                }
+
+                if (isChallengeMode) {
+                    challengeCount++;
+                    // Mostrar a resposta em verde no chat antes de continuar
+                    botReply(`❌ **Errado.** A resposta correta é: <span style="color: #10b981; font-weight: 800;">${currentQuestionObj.answer}</span>`);
+                    
+                    if (challengeCount < CHALLENGE_LIMIT) {
+                        setTimeout(nextQuestion, 2500);
+                    } else {
+                        setTimeout(() => {
+                            botReply("🏁 **Fim do Desafio.** Revise os conteúdos e tente novamente.");
+                            isChallengeMode = false;
+                        }, 1000);
+                    }
+                } else {
+                    botReply("❌ **Não foi dessa vez.**\n\nA resposta correta seria: **" + currentQuestionObj.answer + "**\n\nO que deseja fazer agora?", ["Ver outra pergunta", "Não, por enquanto só"]);
+                }
+            }
+            updateStatsUI();
+            saveStats();
+            return;
+        }
+
+        botReply("Seja bem-vindo ao portal de estudos **Expert 3**. Como posso ajudar em sua jornada de aprendizado hoje?");
+    }
+
+    // Eventos
+    sendBtn.addEventListener('click', () => {
+        processUserMessage(userInput.value);
+        userInput.value = "";
+        userInput.focus();
+    });
+
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            processUserMessage(userInput.value);
+            userInput.value = "";
+        }
+    });
+
+    // Eventos dos Chips
+    document.querySelectorAll('.chip-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            processUserMessage(btn.getAttribute('data-action'));
+            userInput.focus();
+        });
+    });
+
+    // Início
+    initApp();
+
+</script>
+</body>
+</html>
