@@ -2,7 +2,9 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>StudyBot · Assistente Interativo</title>
     <!-- Biblioteca de Ícones Profissionais -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -36,9 +38,12 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            height: 100dvh;
             margin: 0;
             padding: 0;
             overflow: hidden;
+            position: fixed;
+            width: 100%;
         }
 
         /* Container Principal Imersivo */
@@ -76,12 +81,24 @@
 
         @media (max-width: 768px) {
             .stats-sidebar {
-                display: none; /* Escondido por padrão no mobile */
+                position: fixed;
+                left: -300px;
+                top: 0;
+                bottom: 0;
+                z-index: 1000;
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+                display: flex; /* Override display: none */
+                width: 280px;
+            }
+            
+            .stats-sidebar.active {
+                left: 0;
             }
             
             .study-app {
                 max-width: 100%;
-                height: 100dvh; /* dynamic viewport height */
+                height: 100dvh;
             }
         }
 
@@ -160,13 +177,48 @@
         /* Header Minimalista */
         .chat-header {
             background: var(--bg-header);
-            padding: 1.2rem 2rem;
+            padding: 1rem 1.5rem;
             display: flex;
             align-items: center;
-            gap: 1.2rem;
+            gap: 1rem;
             z-index: 10;
             color: white;
             box-shadow: 0 4px 12px rgba(0, 65, 163, 0.1);
+            padding-top: calc(1rem + env(safe-area-inset-top));
+        }
+
+        .menu-toggle {
+            display: none;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: flex;
+            }
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            backdrop-filter: blur(2px);
+        }
+
+        .overlay.active {
+            display: block;
         }
 
         .bot-avatar {
@@ -488,13 +540,23 @@
 
         /* Utilitário para ocultar elementos */
         .hidden { display: none !important; }
+
+        .mobile-only { display: none; }
+        @media (max-width: 768px) {
+            .mobile-only { display: block; }
+        }
     </style>
 </head>
 <body>
 
+<div class="overlay" id="menuOverlay"></div>
+
 <div class="study-app">
     <!-- Sidebar de Estatísticas -->
-    <div class="stats-sidebar">
+    <div class="stats-sidebar" id="sidebar">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: -2rem;" class="mobile-only">
+            <button onclick="toggleMenu()" style="background: none; border: none; color: var(--text-secondary);"><i data-lucide="x"></i></button>
+        </div>
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
            <div style="display: flex; align-items: center; justify-content: center; width: 100%;"><img src="logo.gif" alt="Panasonic" style="height: 70px;"></div>
         </div>
@@ -539,6 +601,9 @@
         </div>
 
         <div class="chat-header">
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i data-lucide="menu" size="24"></i>
+            </button>
             <div class="bot-avatar"><i data-lucide="graduation-cap" stroke-width="2.5" size="20"></i></div>
             <div class="header-text">
                 <h2 style="font-weight: 800; letter-spacing: -0.02em;">Expert 3</h2>
@@ -815,6 +880,17 @@ const questionBank = [
         const totalQ = questionBank.length;
         botReply(`Olá! Bem-vindo ao **Expert 3** 📘.\n\nSou seu assistente de certificação. Temos um banco de **${totalQ} questões** preparadas para você. Vamos testar seus conhecimentos hoje? Escolha uma opção abaixo.`);
     }
+
+    // Toggle Menu Lateral
+    window.toggleMenu = function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('menuOverlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
+    // Fechar menu ao clicar no overlay ou em botões de ação
+    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
 
     function saveStats() {
         localStorage.setItem('panasonic_academy_stats', JSON.stringify(stats));
@@ -1101,6 +1177,11 @@ const questionBank = [
         btn.addEventListener('click', () => {
             processUserMessage(btn.getAttribute('data-action'));
             userInput.focus();
+            // Fechar menu se estiver no mobile
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar.classList.contains('active')) toggleMenu();
+            }
         });
     });
 
