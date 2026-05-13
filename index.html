@@ -23,6 +23,10 @@
             --accent: #0041a3;
             --success: #10b981;
         }
+        /* Oculta a barra de stats mobile que fica acima do header */
+.mobile-stats-header {
+    display: none !important;
+}
 
         * {
             margin: 0;
@@ -174,7 +178,7 @@
             position: relative;
         }
 
-        /* Header Minimalista */
+        /* Header Minimalista - sem margens superiores extras, colado no topo */
         .chat-header {
             background: var(--bg-header);
             padding: 1rem 1.5rem;
@@ -184,7 +188,16 @@
             z-index: 10;
             color: white;
             box-shadow: 0 4px 12px rgba(0, 65, 163, 0.1);
-            padding-top: calc(1rem + env(safe-area-inset-top));
+            /* Removemos qualquer padding-top adicional que pudesse gerar espaço */
+            padding-top: 1rem;
+        }
+
+        /* Ajuste para garantir que não haja espaço em dispositivos com notch/status bar,
+           mantendo o header totalmente no topo sem área branca */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .chat-header {
+                padding-top: 1rem;
+            }
         }
 
         .menu-toggle {
@@ -263,7 +276,7 @@
                 padding: 1.2rem;
             }
             .chat-header {
-                padding: 1rem 1.2rem;
+                padding: 0.8rem 1.2rem;
             }
         }
 
@@ -382,59 +395,10 @@
             background: #f0f7ff;
         }
 
-        /* Input Area Moderno */
+        /* Input Area Oculto */
         .input-area {
-            display: none; /* Oculto a pedido do usuário para evitar teclado no mobile */
-            padding: 1rem 1.5rem 1.5rem 1.5rem;
-            background: var(--bg-app);
-            gap: 0.8rem;
+            display: none;
         }
-
-        .input-wrapper {
-            flex: 1;
-            background: #f8fafc;
-            border: 1px solid var(--border-color);
-            border-radius: 1rem;
-            display: flex;
-            align-items: center;
-            padding: 0.8rem 0.8rem 0.8rem 1.5rem;
-            transition: all 0.2s;
-        }
-
-        .input-wrapper:focus-within {
-            border-color: var(--accent);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(0, 65, 163, 0.1);
-        }
-
-        .input-wrapper input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-primary);
-            outline: none;
-            font-size: 1rem;
-        }
-
-        .input-wrapper input::placeholder {
-            color: var(--text-secondary);
-        }
-
-        .send-btn {
-            background: var(--accent);
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .send-btn:hover { transform: scale(1.05); }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
@@ -767,8 +731,8 @@ const questionBank = [
     },
     { 
         question: "O Micro-ondas Embutir NN-GB68QSRUK possui a função Descongelamento de Sorvete?", 
-        answer: "Não",
-        options: ["Sim", "Não"]
+        answer: "...Não",
+        options: ["...Sim", "...Não"]
     },
     { 
         question: "Estou procurando uma lavadora de 15kg na cor Titanium, mas meu espaço só comporta até 60cm de largura. A Panasonic tem um modelo que atenda essa necessidade?", 
@@ -905,27 +869,20 @@ const questionBank = [
     const statScore = document.getElementById('statScore');
     const statHits = document.getElementById('statHits');
     const statAccuracy = document.getElementById('statAccuracy');
-
-    // Mobile Stats Elements
     const mStatScore = document.getElementById('mStatScore');
     const mStatHits = document.getElementById('mStatHits');
     const mStatAccuracy = document.getElementById('mStatAccuracy');
 
     function updateStatsUI() {
         const accuracy = stats.total === 0 ? 0 : Math.round((stats.hits / stats.total) * 100);
-        
-        // Update Desktop
         if (statScore) statScore.innerText = stats.score;
         if (statHits) statHits.innerText = stats.hits;
         if (statAccuracy) statAccuracy.innerText = `${accuracy}%`;
-
-        // Update Mobile
         if (mStatScore) mStatScore.innerText = stats.score;
         if (mStatHits) mStatHits.innerText = stats.hits;
         if (mStatAccuracy) mStatAccuracy.innerText = `${accuracy}%`;
     }
 
-    // Função de formatação simples (Negrito e Código)
     function formatText(text) {
         return text
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -939,10 +896,8 @@ const questionBank = [
     function addMessageUI(text, sender, options = null) {
         const div = document.createElement('div');
         div.className = `message ${sender}`;
-        
         const avatarIcon = sender === 'user' ? 'user' : 'graduation-cap';
         const avatarStyle = sender === 'user' ? '' : 'style="background: #f1f5f9; border: 1px solid var(--border-color); color: var(--accent);"';
-        
         let optionsHTML = '';
         if (options && options.length > 0) {
             optionsHTML = `<div class="options-container">
@@ -953,7 +908,6 @@ const questionBank = [
                 `).join('')}
             </div>`;
         }
-
         div.innerHTML = `
             <div class="message-avatar" ${avatarStyle}><i data-lucide="${avatarIcon}" size="18"></i></div>
             <div style="display: flex; flex-direction: column; width: 100%;">
@@ -961,27 +915,23 @@ const questionBank = [
                 ${optionsHTML}
             </div>
         `;
-        
         messagesContainer.appendChild(div);
         lucide.createIcons();
         scrollToBottom();
     }
 
-    // Função global para lidar com cliques em opções
     window.handleOptionClick = function(event, option) {
-        // Desabilitar botões após clique
         const container = event.target.closest('.options-container');
-        if (!container) return;
-        const buttons = container.querySelectorAll('.option-btn');
-        buttons.forEach(btn => btn.disabled = true);
-        
+        if (container) {
+            const buttons = container.querySelectorAll('.option-btn');
+            buttons.forEach(btn => btn.disabled = true);
+        }
         processUserMessage(option);
     };
 
     function botReply(text, options = null) {
         typingIndicator.classList.remove('hidden');
         scrollToBottom();
-        
         setTimeout(() => {
             typingIndicator.classList.add('hidden');
             addMessageUI(text, 'bot', options);
@@ -992,36 +942,29 @@ const questionBank = [
         const q = questionBank[Math.floor(Math.random() * questionBank.length)];
         currentQuestionObj = q;
         waitingForAnswer = true;
-        
         let prefix = isChallengeMode ? `**Desafio [${challengeCount + 1}/${CHALLENGE_LIMIT}]:**\n` : "**Pergunta:**\n";
-        // Bolding the question part
         botReply(`${prefix}**${q.question}**\n\nSelecione uma das opções abaixo:`, q.options);
     }
 
     function processUserMessage(msg) {
         const text = msg.trim();
         if (!text) return;
-
         addMessageUI(text, 'user');
         const lowerMsg = text.toLowerCase();
 
-        // Lógica de Comandos
         if (['/ajuda', 'ajuda'].includes(lowerMsg)) {
-            botReply("**Guia de Comandos:**\n\n`/pergunta` → Inicia um estudo livre\n`/desafio` → Modo desafio (10 questões)\n`/dica` → Ajuda com a resposta\n`/ajuda` → Mostra este guia");
+            botReply("**Guia de Comandos:**\n\n`/pergunta` → Inicia um estudo livre\n`/desafio` → Modo desafio (33 questões- essa opção voce acessa no menu lateral)\n`/dica` → Ajuda com a resposta\n`/ajuda` → Mostra este guia");
             return;
         }
-
         if (['/pergunta', 'nova pergunta', 'estudar agora', 'estudar', 'sim', 'ver outra pergunta'].includes(lowerMsg)) {
             isChallengeMode = false;
             nextQuestion();
             return;
         }
-
         if (['não', 'nao', 'não, por enquanto só'].includes(lowerMsg)) {
             botReply("Tudo bem! Se precisar de outra pergunta ou ajuda, é só me chamar. 😊");
             return;
         }
-
         if (['/desafio', 'desafio'].includes(lowerMsg)) {
             isChallengeMode = true;
             challengeCount = 0;
@@ -1030,19 +973,15 @@ const questionBank = [
             setTimeout(nextQuestion, 1000);
             return;
         }
-
         if (['/dica', 'dica'].includes(lowerMsg)) {
             if (!waitingForAnswer) return botReply("Você precisa iniciar uma pergunta primeiro.");
             botReply(`💡 **Dica:** A resposta começa com: "${currentQuestionObj.answer.substring(0, 10)}..."`);
             return;
         }
 
-        // Validação de resposta ativa
         if (waitingForAnswer && currentQuestionObj) {
             stats.total++;
             const isCorrect = text.toLowerCase().trim() === currentQuestionObj.answer.toLowerCase().trim();
-            
-            // Encontrar a última bolha do bot para animar
             const lastBotBubble = messagesContainer.querySelectorAll('.message.bot .message-bubble');
             const targetBubble = lastBotBubble[lastBotBubble.length - 1];
 
@@ -1051,32 +990,17 @@ const questionBank = [
                 stats.score += 10;
                 if (targetBubble) {
                     targetBubble.classList.remove('correct-answer');
-                    void targetBubble.offsetWidth; // trigger reflow
+                    void targetBubble.offsetWidth;
                     targetBubble.classList.add('correct-answer');
                 }
-                
-                // Efeito de Confete
-                confetti({
-                    particleCount: 150,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#0041a3', '#ffffff', '#10b981']
-                });
-
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0041a3', '#ffffff', '#10b981'] });
                 botReply("✅ **Excelente!** Resposta correta.");
-                
                 if (isChallengeMode) {
                     challengeCount++;
-                    if (challengeCount < CHALLENGE_LIMIT) {
-                        setTimeout(nextQuestion, 1200);
-                    } else {
-                        // Confete extra no fim do desafio
-                        confetti({
-                            particleCount: 300,
-                            spread: 160,
-                            origin: { y: 0.5 }
-                        });
-                        botReply(`🎊 **Desafio Concluído!**\n\nVocê completou o módulo com ${stats.hits} acertos de ${CHALLENGE_LIMIT}. Continue praticando para a certificação total.`);
+                    if (challengeCount < CHALLENGE_LIMIT) setTimeout(nextQuestion, 1200);
+                    else {
+                        confetti({ particleCount: 300, spread: 160, origin: { y: 0.5 } });
+                        botReply(`🎊 **Desafio Concluído!**\n\nVocê completou o módulo com ${stats.hits} acertos de ${CHALLENGE_LIMIT}.`);
                         isChallengeMode = false;
                         waitingForAnswer = false;
                     }
@@ -1086,32 +1010,14 @@ const questionBank = [
                 }
             } else {
                 if (targetBubble) targetBubble.classList.add('wrong-answer');
-                
-                if (targetBubble) {
-                    targetBubble.classList.remove('wrong-answer');
-                    void targetBubble.offsetWidth; // trigger reflow
-                    targetBubble.classList.add('wrong-answer');
-                }
-                
-                // Efeito de erro visual
-                document.body.classList.remove('error-flash');
-                const appContainer = document.querySelector('.study-app');
-                if (appContainer) appContainer.classList.remove('screen-shake');
-                
-                void document.body.offsetWidth; // trigger reflow
-                
                 document.body.classList.add('error-flash');
+                const appContainer = document.querySelector('.study-app');
                 if (appContainer) appContainer.classList.add('screen-shake');
-
-                // Remover classes após animação para permitir repetição
                 setTimeout(() => {
                     document.body.classList.remove('error-flash');
                     if (appContainer) appContainer.classList.remove('screen-shake');
                 }, 600);
-
                 waitingForAnswer = false;
-                
-                // Destacar opções correta/errada nos botões
                 const lastOptionsContainer = messagesContainer.querySelector('.message.bot:last-of-type .options-container');
                 if (lastOptionsContainer) {
                     const buttons = lastOptionsContainer.querySelectorAll('.option-btn');
@@ -1119,7 +1025,6 @@ const questionBank = [
                         const btnText = btn.innerText.trim().toLowerCase();
                         const correctText = currentQuestionObj.answer.trim().toLowerCase();
                         const clickedText = text.toLowerCase().trim();
-                        
                         if (btnText.includes(correctText) || correctText.includes(btnText)) {
                             btn.classList.add('correct-option-hint');
                             const icon = btn.querySelector('i');
@@ -1132,20 +1037,11 @@ const questionBank = [
                     });
                     lucide.createIcons();
                 }
-
                 if (isChallengeMode) {
                     challengeCount++;
-                    // Mostrar a resposta em verde no chat antes de continuar
                     botReply(`❌ **Errado.** A resposta correta é: <span style="color: #10b981; font-weight: 800;">${currentQuestionObj.answer}</span>`);
-                    
-                    if (challengeCount < CHALLENGE_LIMIT) {
-                        setTimeout(nextQuestion, 2500);
-                    } else {
-                        setTimeout(() => {
-                            botReply("🏁 **Fim do Desafio.** Revise os conteúdos e tente novamente.");
-                            isChallengeMode = false;
-                        }, 1000);
-                    }
+                    if (challengeCount < CHALLENGE_LIMIT) setTimeout(nextQuestion, 2500);
+                    else setTimeout(() => { botReply("🏁 **Fim do Desafio.** Revise os conteúdos e tente novamente."); isChallengeMode = false; }, 1000);
                 } else {
                     botReply("❌ **Não foi dessa vez.**\n\nA resposta correta seria: **" + currentQuestionObj.answer + "**\n\nO que deseja fazer agora?", ["Ver outra pergunta", "Não, por enquanto só"]);
                 }
@@ -1154,40 +1050,13 @@ const questionBank = [
             saveStats();
             return;
         }
-
         botReply("Seja bem-vindo ao portal de estudos **Expert 3**. Como posso ajudar em sua jornada de aprendizado hoje?");
     }
 
-    // Eventos
-    sendBtn.addEventListener('click', () => {
-        processUserMessage(userInput.value);
-        userInput.value = "";
-        userInput.focus();
-    });
-
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            processUserMessage(userInput.value);
-            userInput.value = "";
-        }
-    });
-
-    // Eventos dos Chips
-    document.querySelectorAll('.chip-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            processUserMessage(btn.getAttribute('data-action'));
-            userInput.focus();
-            // Fechar menu se estiver no mobile
-            if (window.innerWidth <= 768) {
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar.classList.contains('active')) toggleMenu();
-            }
-        });
-    });
-
-    // Início
+    sendBtn.addEventListener('click', () => { processUserMessage(userInput.value); userInput.value = ""; userInput.focus(); });
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { processUserMessage(userInput.value); userInput.value = ""; } });
+    document.querySelectorAll('.chip-btn').forEach(btn => { btn.addEventListener('click', () => { processUserMessage(btn.getAttribute('data-action')); userInput.focus(); if (window.innerWidth <= 768) { const sidebar = document.getElementById('sidebar'); if (sidebar.classList.contains('active')) toggleMenu(); } }); });
     initApp();
-
 </script>
 </body>
 </html>
