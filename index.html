@@ -965,14 +965,21 @@ const questionBank = [
             botReply("Tudo bem! Se precisar de outra pergunta ou ajuda, é só me chamar. 😊");
             return;
         }
-        if (['/desafio', 'desafio'].includes(lowerMsg)) {
-            isChallengeMode = true;
-            challengeCount = 0;
-            stats.score = 0;
-            botReply("🏆 **Modo Desafio Iniciado!**\n\nSerão 10 perguntas seguidas. Vamos testar seu nível de certificação Panasonic.");
-            setTimeout(nextQuestion, 1000);
-            return;
-        }
+if (['/desafio', 'desafio'].includes(lowerMsg)) {
+    // Reseta todas as estatísticas para o novo desafio
+    stats = {
+        score: 0,
+        hits: 0,
+        total: 0
+    };
+    isChallengeMode = true;
+    challengeCount = 0;
+    updateStatsUI();
+    saveStats();
+    botReply("🏆 **Modo Desafio Iniciado!**\n\nSerão 33 perguntas seguidas. Vamos testar seu nível de certificação Panasonic.\n\n**As estatísticas foram resetadas para este desafio!**");
+    setTimeout(nextQuestion, 1000);
+    return;
+}
         if (['/dica', 'dica'].includes(lowerMsg)) {
             if (!waitingForAnswer) return botReply("Você precisa iniciar uma pergunta primeiro.");
             botReply(`💡 **Dica:** A resposta começa com: "${currentQuestionObj.answer.substring(0, 10)}..."`);
